@@ -5,7 +5,7 @@
  * @version 3.9.0
  * @license MIT
  * @link https://github.com/nhn/tui.chart
- * bundle created at "Thu Nov 07 2019 14:57:09 GMT+0900 (Korean Standard Time)"
+ * bundle created at "Tue Jan 21 2020 13:00:27 GMT+0100 (Central European Standard Time)"
  */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -656,7 +656,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 10 */
 /***/ (function(module, exports) {
 
-	var core = module.exports = { version: '2.6.10' };
+	var core = module.exports = { version: '2.6.11' };
 	if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
 
 
@@ -9785,7 +9785,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	
 	        var colors = this.theme.colors;
-	        var colorByPoint = this.options.colorByPoint;
+	        var _options = this.options,
+	            colorByPoint = _options.colorByPoint,
+	            animationDuration = _options.animationDuration;
 	
 	        var groupBars = groupBounds.map(function (bounds, groupIndex) {
 	            return bounds.map(function (bound, index) {
@@ -9795,7 +9797,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	                var item = _this.seriesDataModel.getSeriesItem(groupIndex, index);
 	                var color = colorByPoint ? colors[groupIndex] : colors[index];
-	                var rect = _this._renderBar(bound.start, color);
+	                var rect = _this._renderBar(animationDuration ? bound.start : bound.end, color);
 	
 	                return {
 	                    rect: rect,
@@ -10025,18 +10027,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * Animate rect.
 	     * @param {object} rect raphael object
 	     * @param {{left: number, top:number, width: number, height: number}} bound rect bound
+	     * @param {number} animationDuration animation duration
 	     * @private
 	     */
 	
 	
-	    RaphaelBarChart.prototype._animateRect = function _animateRect(rect, bound) {
+	    RaphaelBarChart.prototype._animateRect = function _animateRect(rect, bound, animationDuration) {
 	        rect.animate({
 	            x: bound.width ? bound.left : bound.left - SERIES_EXTRA_VISUAL_AREA_FOR_ZERO / 2,
 	            y: bound.height ? bound.top : bound.top - SERIES_EXTRA_VISUAL_AREA_FOR_ZERO / 2,
 	            width: bound.width ? bound.width : SERIES_EXTRA_VISUAL_AREA_FOR_ZERO,
 	            height: bound.height ? bound.height : SERIES_EXTRA_VISUAL_AREA_FOR_ZERO,
 	            opacity: bound.height && bound.width ? 1 : SERIES_EXTRA_VISUAL_OPACITY_FOR_ZERO
-	        }, ANIMATION_DURATION, '>');
+	        }, animationDuration, '>');
 	    };
 	
 	    /**
@@ -10069,13 +10072,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this3 = this;
 	
 	        var groupBorders = this.groupBorders || [];
+	        var animationDuration = this.options.animationDuration;
+	
 	
 	        _raphaelRenderUtil2['default'].forEach2dArray(this.groupBars, function (bar, groupIndex, index) {
 	            var lines = groupBorders[groupIndex] && groupBorders[groupIndex][index];
 	            if (!bar) {
 	                return;
 	            }
-	            _this3._animateRect(bar.rect, bar.bound);
+	
+	            if (animationDuration) {
+	                _this3._animateRect(bar.rect, bar.bound, animationDuration);
+	            }
+	
 	            if (lines) {
 	                _this3._animateBorders(lines, bar.bound, _this3.chartType, bar.item);
 	            }
@@ -10085,7 +10094,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this.callbackTimeout = setTimeout(function () {
 	                onFinish();
 	                delete _this3.callbackTimeout;
-	            }, ANIMATION_DURATION);
+	            }, animationDuration);
 	        }
 	    };
 	
@@ -10738,6 +10747,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	
 	        element.animate(animation);
+	    },
+	
+	    /**
+	     * get default animation duration
+	     * @param {string} chartType - chart type
+	     * @returns {number} duration - default duration
+	     * @private
+	     */
+	    getDefaultAnimationDuration: function getDefaultAnimationDuration(chartType) {
+	        switch (chartType) {
+	            case 'boxplot':
+	            case 'combo':
+	            case 'pie':
+	            case 'scatter':
+	            case 'bubble':
+	            case 'area':
+	            case 'line':
+	            case 'column':
+	            case 'bar':
+	                return 700;
+	            case 'heatmap':
+	            case 'treemap':
+	                return 600;
+	            default:
+	                return 0;
+	        }
 	    }
 	};
 	
@@ -15327,8 +15362,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (!labelSize) {
 	            var div = this._createSizeCheckEl();
 	            var span = div.firstChild;
-	
-	            span.innerHTML = label;
+	            span.innerText = label;
 	
 	            this._addCssStyle(div, theme);
 	
@@ -16946,7 +16980,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                           *         FE Development Lab <dl_javascript@nhn.com>
 	                                                                                                                                                           */
 	
-	var ANIMATION_DURATION = 700;
 	var EMPHASIS_OPACITY = 1;
 	var DE_EMPHASIS_OPACITY = 0.3;
 	var DEFAULT_LUMINANC = 0.2;
@@ -16985,6 +17018,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.options = data.options;
 	        this.seriesDataModel = data.seriesDataModel;
 	        this.chartType = data.chartType;
+	        this.animationDuration = data.options.animationDuration;
 	
 	        this.paper.setStart();
 	        this.groupWhiskers = [];
@@ -17065,10 +17099,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	                var item = _this.seriesDataModel.getSeriesItem(groupIndex, index);
 	                var color = colorByPoint ? colors[groupIndex] : colors[index];
+	                var boundStart = _this.animationDuration ? bound.start : bound.end;
 	                var rect = void 0;
 	
-	                if (bound.start) {
-	                    rect = _this._renderBox(bound.start, color);
+	                if (boundStart) {
+	                    rect = _this._renderBox(boundStart, color);
 	                }
 	
 	                return {
@@ -17102,7 +17137,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	
 	    RaphaelBoxplotChart.prototype._renderWhisker = function _renderWhisker(end, start, color) {
-	        var paper = this.paper;
+	        var paper = this.paper,
+	            animationDuration = this.animationDuration;
 	
 	        var topDistance = start.top - end.top;
 	        var whiskerDirection = topDistance > 0 ? 1 : -1;
@@ -17118,10 +17154,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var whiskers = [];
 	
 	        edge.attr({
-	            opacity: 0
+	            opacity: animationDuration ? 0 : 1
 	        });
 	        whisker.attr({
-	            opacity: 0
+	            opacity: animationDuration ? 0 : 1
 	        });
 	
 	        whiskers.push(edge);
@@ -17165,7 +17201,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var median = _raphaelRenderUtil2['default'].renderLine(this.paper, medianLinePath, '#ffffff', MEDIAN_LINE_WIDTH);
 	
 	        median.attr({
-	            opacity: 0
+	            opacity: this.animationDuration ? 0 : 1
 	        });
 	
 	        return median;
@@ -17202,7 +17238,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	
 	        outlier.attr({
-	            opacity: 0
+	            opacity: this.animationDuration ? 0 : 1
 	        });
 	
 	        return outlier;
@@ -17337,17 +17373,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * Animate rect.
 	     * @param {object} rect raphael object
 	     * @param {{left: number, top:number, width: number, height: number}} bound rect bound
+	     * @param {number} duration animation duration
 	     * @private
 	     */
 	
 	
-	    RaphaelBoxplotChart.prototype._animateRect = function _animateRect(rect, bound) {
+	    RaphaelBoxplotChart.prototype._animateRect = function _animateRect(rect, bound, duration) {
 	        rect.animate({
 	            x: bound.left,
 	            y: bound.top,
 	            width: bound.width,
 	            height: bound.height
-	        }, ANIMATION_DURATION, '>');
+	        }, duration, '>');
 	    };
 	
 	    /**
@@ -17359,36 +17396,38 @@ return /******/ (function(modules) { // webpackBootstrap
 	    RaphaelBoxplotChart.prototype.animate = function animate(onFinish) {
 	        var _this7 = this;
 	
-	        var animation = _raphael2['default'].animation({
-	            opacity: 1
-	        }, ANIMATION_DURATION);
+	        if (this.animationDuration) {
+	            var animation = _raphael2['default'].animation({
+	                opacity: 1
+	            }, this.animationDuration);
 	
-	        _raphaelRenderUtil2['default'].forEach2dArray(this.groupBoxes, function (box) {
-	            if (!box) {
-	                return;
-	            }
-	            _this7._animateRect(box.rect, box.bound);
-	        });
-	
-	        _raphaelRenderUtil2['default'].forEach2dArray(this.groupWhiskers, function (whisker) {
-	            whisker.animate(animation.delay(ANIMATION_DURATION));
-	        });
-	
-	        _raphaelRenderUtil2['default'].forEach2dArray(this.groupMedians, function (median) {
-	            median.animate(animation.delay(ANIMATION_DURATION));
-	        });
-	
-	        _raphaelRenderUtil2['default'].forEach2dArray(this.groupOutliers, function (outliers) {
-	            outliers.forEach(function (outlier) {
-	                outlier.animate(animation.delay(ANIMATION_DURATION));
+	            _raphaelRenderUtil2['default'].forEach2dArray(this.groupBoxes, function (box) {
+	                if (!box) {
+	                    return;
+	                }
+	                _this7._animateRect(box.rect, box.bound, _this7.animationDuration);
 	            });
-	        });
 	
-	        if (onFinish) {
-	            this.callbackTimeout = setTimeout(function () {
-	                onFinish();
-	                delete _this7.callbackTimeout;
-	            }, ANIMATION_DURATION);
+	            _raphaelRenderUtil2['default'].forEach2dArray(this.groupWhiskers, function (whisker) {
+	                whisker.animate(animation.delay(_this7.animationDuration));
+	            });
+	
+	            _raphaelRenderUtil2['default'].forEach2dArray(this.groupMedians, function (median) {
+	                median.animate(animation.delay(_this7.animationDuration));
+	            });
+	
+	            _raphaelRenderUtil2['default'].forEach2dArray(this.groupOutliers, function (outliers) {
+	                outliers.forEach(function (outlier) {
+	                    outlier.animate(animation.delay(_this7.animationDuration));
+	                });
+	            });
+	
+	            if (onFinish) {
+	                this.callbackTimeout = setTimeout(function () {
+	                    onFinish();
+	                    delete _this7.callbackTimeout;
+	                }, this.animationDuration);
+	            }
 	        }
 	    };
 	
@@ -17687,8 +17726,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	var browser = _tuiCodeSnippet2['default'].browser;
 	
 	var IS_LTE_IE8 = browser.msie && browser.version <= 8;
-	var ANIMATION_DURATION = 700;
-	var ANIMATION_DELAY = 700;
 	var EMPHASIS_OPACITY = 1;
 	var DE_EMPHASIS_OPACITY = 0.3;
 	var EVENT_DETECTOR_PADDING = 20;
@@ -17726,6 +17763,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.options = data.options;
 	        this.chartType = data.chartType;
 	        this.isVertical = data.isVertical;
+	        this.animationDuration = data.options.animationDuration;
 	
 	        this.seriesDataModel = seriesDataModel;
 	        this.maxRangeCount = seriesDataModel.maxRangeCount;
@@ -17935,7 +17973,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	        var paper = this.paper,
 	            dimension = this.dimension,
-	            position = this.position;
+	            position = this.position,
+	            animationDuration = this.animationDuration;
 	
 	        var clipRectId = this._getClipRectId();
 	        var clipRectWidth = dimension.width - EVENT_DETECTOR_PADDING;
@@ -17947,10 +17986,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	        if (this.isVertical) {
 	            startDimension.width = clipRectWidth;
-	            startDimension.height = 0;
+	            startDimension.height = animationDuration ? 0 : clipRectHeight;
 	            animateAttr.height = clipRectHeight;
 	        } else {
-	            startDimension.width = 0;
+	            startDimension.width = animationDuration ? 0 : clipRectWidth;
 	            startDimension.height = clipRectHeight;
 	            animateAttr.width = clipRectWidth;
 	        }
@@ -17980,14 +18019,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }
 	            });
 	
-	            clipRect.animate(animateAttr, ANIMATION_DURATION, '>', onFinish);
+	            if (animationDuration) {
+	                clipRect.animate(animateAttr, animationDuration, '>', onFinish);
+	            }
 	        }
 	
 	        if (onFinish) {
 	            this.callbackTimeout = setTimeout(function () {
 	                onFinish();
 	                delete _this2.callbackTimeout;
-	            }, ANIMATION_DELAY);
+	            }, animationDuration);
 	        }
 	    };
 	
@@ -18033,21 +18074,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                height: height
 	            });
 	        }
-	    };
-	
-	    /**
-	     * set clip rect position
-	     * @param {object} position series position
-	     */
-	
-	
-	    RaphaelBulletChart.prototype.setClipRectPosition = function setClipRectPosition(position) {
-	        var clipRect = this.paper.getById(this._getClipRectId() + '_rect');
-	
-	        clipRect.attr({
-	            x: position.left,
-	            y: position.top
-	        });
 	    };
 	
 	    /**
@@ -18341,6 +18367,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.groupPositions = groupPositions;
 	        this.groupPaths = groupPaths;
 	        this.dotOpacity = opacity;
+	        this.animationDuration = options.animationDuration;
+	
 	        delete this.pivotGroupDots;
 	
 	        if (paper.raphael.svg) {
@@ -18668,7 +18696,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	var browser = _tuiCodeSnippet2['default'].browser;
 	
 	var IS_LTE_IE8 = browser.msie && browser.version <= 8;
-	var ANIMATION_DURATION = 700;
 	var DEFAULT_DOT_RADIUS = 6;
 	var SELECTION_DOT_RADIUS = 7;
 	var DE_EMPHASIS_OPACITY = 0.3;
@@ -19535,7 +19562,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    RaphaelLineTypeBase.prototype.animate = function animate(onFinish, seriesSet) {
 	        var paper = this.paper,
 	            dimension = this.dimension,
-	            position = this.position;
+	            position = this.position,
+	            animationDuration = this.animationDuration;
 	
 	        var clipRectId = this._getClipRectId();
 	        var remakePosition = this._makeClipRectPosition(position);
@@ -19544,12 +19572,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	        if (!IS_LTE_IE8 && dimension) {
 	            if (!clipRect) {
-	                clipRect = createClipPathRectWithLayout(paper, remakePosition, dimension, clipRectId);
+	                clipRect = createClipPathRectWithLayout(paper, remakePosition, dimension, clipRectId, !!animationDuration);
 	                this.clipRect = clipRect;
 	            } else {
 	                this._makeClipRectPosition(position);
 	                clipRect.attr({
-	                    width: 0,
+	                    width: animationDuration ? 0 : dimension.width,
 	                    height: dimension.height,
 	                    x: remakePosition.left,
 	                    y: remakePosition.top
@@ -19560,9 +19588,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	                seriesElement.node.setAttribute('clip-path', 'url(#' + clipRectId + ')');
 	            });
 	
-	            clipRect.animate({
-	                width: dimension.width
-	            }, ANIMATION_DURATION, '>', onFinish);
+	            if (animationDuration) {
+	                clipRect.animate({
+	                    width: dimension.width
+	                }, animationDuration, '>', onFinish);
+	            }
 	        }
 	    };
 	
@@ -19800,14 +19830,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @param {object} position position
 	 * @param {object} dimension dimension
 	 * @param {string} id ID string
+	 * @param {boolean} isAnimated animation
 	 * @returns {object}
 	 * @ignore
 	 */
 	
 	
-	function createClipPathRectWithLayout(paper, position, dimension, id) {
+	function createClipPathRectWithLayout(paper, position, dimension, id, isAnimated) {
 	    var clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
-	    var rect = paper.rect(position.left, position.top, 0, dimension.height);
+	    var rect = paper.rect(position.left, position.top, isAnimated ? 0 : dimension.width, dimension.height);
 	
 	    rect.id = id + '_rect';
 	    clipPath.id = id;
@@ -20556,6 +20587,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.position = position;
 	        this.zeroTop = zeroTop;
 	        this.hasRangeData = hasRangeData;
+	        this.animationDuration = data.options.animationDuration;
 	
 	        paper.setStart();
 	
@@ -21122,7 +21154,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	var DEGREE_360 = 360;
 	var MIN_DEGREE = 0.01;
 	var RAD = Math.PI / DEGREE_180;
-	var LOADING_ANIMATION_DURATION = 700;
 	var EMPHASIS_OPACITY = 1;
 	var DE_EMPHASIS_OPACITY = 0.3;
 	var DEFAULT_LUMINANT_VALUE = 0.2;
@@ -21155,6 +21186,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	     */
 	    RaphaelPieChart.prototype.render = function render(paper, data, callbacks) {
 	        var pieSeriesSet = paper.set();
+	        /**
+	         * series rendering animation duration
+	         * @type {number | object}
+	         */
+	        this.animationDuration = data.options.animationDuration;
 	
 	        /**
 	         * raphael object
@@ -21258,7 +21294,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var startRadian = startAngle * RAD;
 	        var endRadian = endAngle * RAD;
 	        var x1 = cx + r * Math.sin(startRadian); // x point of start radian
-	        var y1 = cy - r * Math.cos(startRadian); // y posint of start radian
+	        var y1 = cy - r * Math.cos(startRadian); // y point of start radian
 	        var x2 = cx + r * Math.sin(endRadian); // x point of end radian
 	        var y2 = cy - r * Math.cos(endRadian); // y point of end radian
 	        var largeArcFlag = endAngle - startAngle > DEGREE_180 ? 1 : 0;
@@ -21399,20 +21435,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	
 	        var circleBound = this.circleBound,
-	            chartBackground = this.chartBackground;
+	            chartBackground = this.chartBackground,
+	            animationDuration = this.animationDuration;
 	
 	        var sectorInfos = [];
 	
 	        sectorData.forEach(function (sectorDatum, index) {
-	            var ratio = sectorDatum.ratio;
+	            var ratio = sectorDatum.ratio,
+	                angles = sectorDatum.angles;
 	
 	            var color = colors[index];
 	            var sector = _this._renderSector({
 	                paper: _this.paper,
 	                circleBound: circleBound,
-	                angles: sectorDatum.angles.start,
+	                angles: animationDuration ? angles.start : angles.end,
 	                attrs: {
-	                    fill: chartBackground.color,
+	                    fill: animationDuration ? chartBackground.color : color,
 	                    stroke: chartBackground.color,
 	                    'stroke-width': 0
 	                }
@@ -21427,7 +21465,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            sectorInfos.push({
 	                sector: sector,
 	                color: color,
-	                angles: sectorDatum.angles.end,
+	                angles: angles.end,
 	                ratio: ratio
 	            });
 	
@@ -21513,7 +21551,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	    RaphaelPieChart.prototype.animate = function animate(callback) {
 	        var sectorName = this.sectorName,
-	            circleBound = this.circleBound;
+	            circleBound = this.circleBound,
+	            animationDuration = this.animationDuration;
 	
 	        var sectorArgs = [circleBound.cx, circleBound.cy, circleBound.r];
 	        var delayTime = 0;
@@ -21524,16 +21563,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var attrMap = {
 	                fill: sectorInfo.color
 	            };
-	            var animationTime = LOADING_ANIMATION_DURATION * sectorInfo.ratio;
+	            if (animationDuration) {
+	                var animationTime = animationDuration * sectorInfo.ratio;
 	
-	            if (angles.startAngle === 0 && angles.endAngle === DEGREE_360) {
-	                angles.endAngle = DEGREE_360 - MIN_DEGREE;
+	                if (angles.startAngle === 0 && angles.endAngle === DEGREE_360) {
+	                    angles.endAngle = DEGREE_360 - MIN_DEGREE;
+	                }
+	                attrMap[sectorName] = sectorArgs.concat([angles.startAngle, angles.endAngle]);
+	                var anim = _raphael2['default'].animation(attrMap, animationTime, '>');
+	                sectorInfo.sector.animate(anim.delay(delayTime));
+	                delayTime += animationTime;
 	            }
-	            attrMap[sectorName] = sectorArgs.concat([angles.startAngle, angles.endAngle]);
-	
-	            var anim = _raphael2['default'].animation(attrMap, animationTime, '>');
-	            sectorInfo.sector.animate(anim.delay(delayTime));
-	            delayTime += animationTime;
 	        });
 	
 	        if (callback) {
@@ -21725,13 +21765,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    /**
 	     * Render labels and return label set
 	     * @param {object} options label render options
-	     *      @param {dataType} dataType dataType (legend or value)
-	     *      @param {object} paper Raphael paper
-	     *      @param {Array.<object>} labelSet lableset
-	     *      @param {object} positions position left, top
-	     *      @param {Array.<string>} labels series labels
-	     *      @param {object} theme label theme
-	     *      @param {Array} colors series theme colors
+	     *      @param {dataType} options.dataType dataType (legend or value)
+	     *      @param {object} options.paper Raphael paper
+	     *      @param {Array.<object>} options.labelSet lableset
+	     *      @param {object} options.positions position left, top
+	     *      @param {Array.<string>} options.labels series labels
+	     *      @param {object} options.theme label theme
+	     *      @param {Array} options.colors series theme colors
 	     */
 	
 	
@@ -22073,7 +22113,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                           *         FE Development Lab <dl_javascript@nhn.com>
 	                                                                                                                                                           */
 	
-	var ANIMATION_DURATION = 700;
 	var CIRCLE_OPACITY = 0.8;
 	var STROKE_OPACITY = 1;
 	var EMPHASIS_OPACITY = 0.8;
@@ -22121,6 +22160,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var circleSet = paper.set();
 	
 	        this.paper = paper;
+	        this.animationDuration = data.options.animationDuration;
 	
 	        /**
 	         * theme
@@ -22232,9 +22272,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	                if (bound) {
 	                    var color = colors[index];
-	                    var circle = _raphaelRenderUtil2['default'].renderCircle(_this.paper, bound, 0, {
+	                    var circle = _raphaelRenderUtil2['default'].renderCircle(_this.paper, bound, _this.animationDuration ? 0 : bound.radius, {
 	                        fill: color,
-	                        opacity: 0,
+	                        opacity: _this.animationDuration ? 0 : CIRCLE_OPACITY,
 	                        stroke: 'none'
 	                    });
 	
@@ -22242,7 +22282,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	                    circle.data('groupIndex', groupIndex);
 	                    circle.data('index', index);
-	
 	                    circleInfo = {
 	                        circle: circle,
 	                        color: color,
@@ -22259,15 +22298,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * Animate circle
 	     * @param {object} circle - raphael object
 	     * @param {number} radius - radius of circle
+	     * @param {number} animationDuration - animation duration
 	     * @private
 	     */
 	
 	
-	    RaphaelBubbleChart.prototype._animateCircle = function _animateCircle(circle, radius) {
+	    RaphaelBubbleChart.prototype._animateCircle = function _animateCircle(circle, radius, animationDuration) {
 	        circle.animate({
 	            r: radius,
 	            opacity: CIRCLE_OPACITY
-	        }, ANIMATION_DURATION, '>');
+	        }, animationDuration, '>');
 	    };
 	
 	    /**
@@ -22282,7 +22322,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (!circleInfo) {
 	                return;
 	            }
-	            _this2._animateCircle(circleInfo.circle, circleInfo.bound.radius);
+	            if (_this2.animationDuration) {
+	                _this2._animateCircle(circleInfo.circle, circleInfo.bound.radius, _this2.animationDuration);
+	            }
 	        });
 	    };
 	
@@ -29488,10 +29530,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	        this._attachToEventBus();
 	
+	        this.componentManager.presetAnimationConfig(this.options.series.animation);
+	
 	        if (this.options.usageStatistics) {
 	            _tuiCodeSnippet2['default'].sendHostname('chart', GA_TRACKING_ID);
 	        }
 	    }
+	
+	    /**
+	     * Destroys the instance.
+	     * @api
+	     * @example
+	     * chart.destroy();
+	     */
+	
+	
+	    ChartBase.prototype.destroy = function destroy() {
+	        var _this = this;
+	
+	        this.eventBus.off();
+	        this.chartContainer.outerHTML = '';
+	        _tuiCodeSnippet2['default'].forEach(this, function (value, key) {
+	            _this[key] = null;
+	        });
+	    };
 	
 	    /**
 	     * get on select series function
@@ -29591,7 +29653,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	    ChartBase.prototype._initializeTitleOptions = function _initializeTitleOptions(targetOptions) {
-	        var _this = this;
+	        var _this2 = this;
 	
 	        if (!targetOptions) {
 	            return;
@@ -29608,7 +29670,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                };
 	            }
 	
-	            _this._initializeOffset(options.title);
+	            _this2._initializeOffset(options.title);
 	        });
 	    };
 	
@@ -29636,7 +29698,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    ChartBase.prototype._initializeOptions = function _initializeOptions(options) {
 	        var originalOptions = _objectUtil2['default'].deepCopy(options);
 	        var defaultOption = {
-	            chartTypes: this.charTypes,
+	            chartTypes: this.chartTypes,
 	            xAxis: {},
 	            series: {},
 	            tooltip: {},
@@ -29657,7 +29719,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this._initializeTitleOptions(options.xAxis);
 	        this._initializeTitleOptions(options.yAxis);
 	        this._initializeTooltipOptions(options.tooltip);
-	
 	        this.options = options;
 	    };
 	
@@ -29895,12 +29956,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    /**
 	     * setData
 	     * @param {object} rawData rawData
+	     * @param {boolean | object} animation whether animate or not, duration
 	     * @api
 	     */
 	
 	
 	    ChartBase.prototype.setData = function setData() {
 	        var rawData = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+	        var animation = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
 	
 	        var data = this._initializeRawData(rawData);
 	        var dataProcessor = this.dataProcessor;
@@ -29916,6 +29979,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.theme = theme;
 	        this.componentManager.presetBeforeRerender();
 	        this.componentManager.presetForChangeData(theme);
+	        this.componentManager.presetAnimationConfig(animation);
 	        this.protectedRerender(dataProcessor.getLegendVisibility());
 	    };
 	
@@ -30578,6 +30642,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _tuiCodeSnippet2 = _interopRequireDefault(_tuiCodeSnippet);
 	
+	var _raphaelRenderUtil = __webpack_require__(337);
+	
+	var _raphaelRenderUtil2 = _interopRequireDefault(_raphaelRenderUtil);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } } /**
@@ -30816,6 +30884,46 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	
 	    /**
+	     * apply animation config before setData
+	     * @param {boolean | object} animation whether animate or not, duration
+	     * @ignore
+	     */
+	
+	
+	    ComponentManager.prototype.presetAnimationConfig = function presetAnimationConfig(animation) {
+	        var _this2 = this;
+	
+	        this.seriesTypes.forEach(function (seriesType) {
+	            if (_tuiCodeSnippet2['default'].isObject(_this2.options.series[seriesType])) {
+	                // For combo chart, options are set for each chart
+	                _this2.options.series[seriesType].animationDuration = _this2._getAnimationDuration(animation);
+	            } else {
+	                _this2.options.series.animationDuration = _this2._getAnimationDuration(animation);
+	            }
+	        });
+	    };
+	
+	    /**
+	     * get default animation duration
+	     * @param {object | boolean} [animation] - animation options
+	     * @returns {number} duration - series rendering animation duration
+	     * @private
+	     */
+	
+	
+	    ComponentManager.prototype._getAnimationDuration = function _getAnimationDuration(animation) {
+	        if (_tuiCodeSnippet2['default'].isBoolean(animation) && !animation) {
+	            return 0;
+	        }
+	
+	        if (_tuiCodeSnippet2['default'].isObject(animation) && _tuiCodeSnippet2['default'].isNumber(animation.duration)) {
+	            return animation.duration;
+	        }
+	
+	        return _raphaelRenderUtil2['default'].getDefaultAnimationDuration(this.options.chartType);
+	    };
+	
+	    /**
 	     * Make option
 	     * @param {string} optionKey Key on which to create the option.
 	     * @param {string} name name of component
@@ -30948,7 +31056,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	    ComponentManager.prototype.render = function render(funcName, boundsAndScale, additionalData, container) {
-	        var _this2 = this;
+	        var _this3 = this;
 	
 	        var elements = this.components.map(function (component) {
 	            var element = null;
@@ -30956,8 +31064,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (component[funcName]) {
 	                var name = component.componentName;
 	                var type = component.componentType;
-	                var paper = _this2.drawingToolPicker.getPaper(container, component.drawingType);
-	                var data = _this2._makeDataForRendering(name, type, paper, boundsAndScale, additionalData);
+	                var paper = _this3.drawingToolPicker.getPaper(container, component.drawingType);
+	                var data = _this3._makeDataForRendering(name, type, paper, boundsAndScale, additionalData);
 	
 	                var result = component[funcName](data);
 	
@@ -31750,11 +31858,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	    Axis.prototype._isOverLapXAxisLabel = function _isOverLapXAxisLabel(labelText, position, nextPosition) {
 	        var labelWidth = _renderUtil2['default'].getRenderedLabelWidth(labelText);
-	        if (!_tuiCodeSnippet2['default'].isUndefined(nextPosition) && nextPosition - position < labelWidth) {
-	            return true;
-	        }
 	
-	        return false;
+	        return !_tuiCodeSnippet2['default'].isUndefined(nextPosition) && nextPosition - position < labelWidth;
 	    };
 	
 	    /**
@@ -43523,7 +43628,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                           *         FE Development Lab <dl_javascript@nhn.com>
 	                                                                                                                                                           */
 	
-	var LABEL_FADE_IN_DURATION = 600;
 	var browser = _tuiCodeSnippet2['default'].browser;
 	
 	var IS_IE7 = browser.msie && browser.version === 7;
@@ -44223,11 +44327,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	    Series.prototype.animateComponent = function animateComponent(isRerendering) {
+	        var _this = this;
+	
 	        if (this.graphRenderer.animate && this.seriesSet) {
 	            this.graphRenderer.animate(_tuiCodeSnippet2['default'].bind(this.animateSeriesLabelArea, this, isRerendering), this.seriesSet);
 	        } else {
 	            this.animateSeriesLabelArea(isRerendering);
 	        }
+	
+	        setTimeout(function () {
+	            // need to set default duration after onFinish callback function
+	            _this.options.animationDuration = _raphaelRenderUtil2['default'].getDefaultAnimationDuration(_this.chartType);
+	        });
 	    };
 	
 	    /**
@@ -44262,7 +44373,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                opacity: 1
 	            });
 	        } else if (this.labelSet && this.labelSet.length) {
-	            _raphaelRenderUtil2['default'].animateOpacity(this.labelSet, 0, 1, LABEL_FADE_IN_DURATION);
+	            _raphaelRenderUtil2['default'].animateOpacity(this.labelSet, 0, 1, this.options.animationDuration);
 	        }
 	    };
 	
@@ -45793,7 +45904,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this._clearSeriesContainer(data.paper);
 	        this._setDataForRendering(data);
 	        this._renderSeriesArea(data.paper, _tuiCodeSnippet2['default'].bind(this._renderGraph, this));
-	        this.animateComponent(true);
 	
 	        if (!_tuiCodeSnippet2['default'].isNull(this.selectedLegendIndex)) {
 	            this.graphRenderer.selectLegend(this.selectedLegendIndex);
@@ -55555,8 +55665,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            scaleDataModel.updateXAxisDataForLabel(addingDataMode);
 	        }
 	
-	        // 10. regiser dimension of rest components
-	        //     register positon of all components
+	        // 10. register dimension of rest components
+	        //     register position of all components
 	        boundsModel.registerBoundsData(scaleDataModel.axisDataMap.xAxis);
 	    },
 	
@@ -59064,7 +59174,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * @private
 	     */
 	    _createMultilineLabel: function _createMultilineLabel(label, limitWidth, theme) {
-	        var words = String(label).split(/\s+/);
+	        var words = String(label).split(' ');
 	        var lines = [];
 	
 	        var _words = _slicedToArray(words, 1),
@@ -59085,7 +59195,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            lines.push(lineWords);
 	        }
 	
-	        return lines.join('<br>');
+	        return lines.join('\n');
 	    },
 	
 	
@@ -59134,14 +59244,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    makeAdditionalDataForMultilineLabels: function makeAdditionalDataForMultilineLabels(labels, validLabelCount, labelTheme, isLabelAxis, dimensionMap) {
 	        var seriesWidth = dimensionMap.series.width;
 	        var labelAreaWidth = this._calculateXAxisLabelAreaWidth(isLabelAxis, seriesWidth, validLabelCount);
-	        var multilineLabels = this._createMultilineLabels(labels, labelTheme, seriesWidth);
+	        var multilineLabels = this._createMultilineLabels(labels, labelTheme, labelAreaWidth);
 	        var multilineHeight = this._calculateMultilineHeight(multilineLabels, labelTheme, labelAreaWidth);
 	        var labelHeight = _renderUtil2['default'].getRenderedLabelsMaxHeight(labels, labelTheme);
 	
 	        return {
 	            multilineLabels: multilineLabels,
 	            overflowHeight: multilineHeight - labelHeight,
-	            overflowLeft: labelAreaWidth / 2 - dimensionMap.yAxis.width
+	            overflowLeft: 0
 	        };
 	    },
 	
